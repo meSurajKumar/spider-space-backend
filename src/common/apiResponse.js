@@ -3,7 +3,8 @@ const apiResponse = {
     QUERY_SUBMITTED:        { message: 'Your question was sent successfully', statusCode: 200, apiCode: 202 },
     RESPONSE_RECEIVED:      { message: 'Answer received from AI',         statusCode: 200, apiCode: 203 },
     SESSION_CLEARED:        { message: 'Chat session has been reset',        statusCode: 200, apiCode: 204 },
-    STREAMING_STARTED:      { message: 'Streaming response initialized',     statusCode: 200, apiCode: 205 }
+    STREAMING_STARTED:      { message: 'Streaming response initialized',     statusCode: 200, apiCode: 205 },
+    SEARCH_INDEX_CREATED:      { message: 'Search index created successfully',     statusCode: 200, apiCode: 206 }
   };
   
   const errorMessages = {

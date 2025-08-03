@@ -3,6 +3,7 @@ import botService from "./bot.service.js";
 
 class BotController { 
 
+    
     createEmbeddings = async(req, res , next)=>{
         try {
             const createEmbedding = await botService.createVectorEmbedings(req);
@@ -18,3 +19,4 @@ class BotController {
 
 const botController = new BotController();
 export default botController;
+

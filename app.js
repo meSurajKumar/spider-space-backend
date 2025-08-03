@@ -4,6 +4,7 @@ import {createServer} from 'node:http';
 import expressMiddlewares from './src/startup/middlewares.js';
 // Database setup here
 // Routes setup here
+import initSearch from './src/startup/createIndex.js';
 import startupRoutes from './src/startup/router.js'
 import errorHandler from './src/middlewares/errorHandler.js';
 
@@ -13,7 +14,7 @@ const server = createServer(app);
 
 // Middleware
 expressMiddlewares(app);
-// database();
+initSearch(); // creating search index;
 startupRoutes(app);
 
 
