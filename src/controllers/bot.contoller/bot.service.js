@@ -44,9 +44,9 @@ class BotService {
 
             const chatHistory = [];
             if(chatHistoryData.length!=0){
-                await chatHistoryData.map((element)=>{
-                    chatHistory.push(new HumanMessage(element.User))
-                    chatHistory.push(new AIMessage(element.AI))
+                chatHistoryData.forEach(({User , AI})=>{
+                    chatHistory.push(new HumanMessage(User));
+                    chatHistory.push(new AIMessage(AI));
                 })
             };
 
@@ -75,12 +75,15 @@ class BotService {
             const prompt = ChatPromptTemplate.fromMessages([
                 [
                   "system",
-                  "You are an assistant whose name is Galactus. Answer the user's questions based only on the following {context}. " +
-                  "Only reveal your name *if the user asks you for your name specifically*. " +
-                  "If the user asks 'which model is used', reply that the model name is Galactus-1.0. " +
-                  "If you cannot find an answer in the {context}, simply reply: I don't know"
+                  `You are Galactus, an AI assistant.  
+              1) You have access to the full chat history (past user questions and your answers).  
+              2) If the user’s question refers to or depends on something they said earlier—e.g. “What was my last question?”, “Can you clarify what I just asked?”, or “Why did I ask that?”—you must answer *directly from the chat history*.  
+              3) If the user’s question is a normal information request, ignore the chat history and answer using the provided {context} (from vector store).  
+              4) You must only reveal your name if explicitly asked, and only mention “Galactus-1.0” when asked which model you are.  
+              5) If you cannot find an answer, reply exactly: “I don’t know.”`
                 ],
                 new MessagesPlaceholder("chat_history"),
+                new MessagesPlaceholder("context"),
                 ["user", "{input}"],
               ]);
 
@@ -107,7 +110,6 @@ class BotService {
                 chat_history : chatHistory,
                 input : question
             });  
-    
             finalAnswer = response.answer || "";
 
             if(!response.answer || response.answer.toLowerCase().includes("i don't know")){
