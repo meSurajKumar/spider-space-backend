@@ -14,6 +14,16 @@ class BotController {
         }
     }
 
+    getBotResponse = async(req, res , next)=>{
+        try {
+            const botResponse = await botService.getBotResponse(req);
+            return res.status(botResponse.statusCode).json({success :true , message : botResponse.message ,data : botResponse.data , apiCode : botResponse.apiCode})
+        } catch (error) {
+            console.log('Error in createEmbedding > ', error);
+            next(error);
+        }
+    }
+
 
 }
 

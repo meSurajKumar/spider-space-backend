@@ -10,7 +10,7 @@ const mongodbDatabase = envVariables.MONGODB_DATABASE_NAME;
 const model = new ChatGoogleGenerativeAI({
     apiKey : geminiApiKey,
     model : googleModelName,
-    temperature : 1, 
+    temperature : 0.5, 
 })
 
 const embedings = new GoogleGenerativeAIEmbeddings({
