@@ -1,0 +1,17 @@
+import * as dotenv from 'dotenv';
+dotenv.config();
+
+let envVariables = {};
+
+const {IS_DEV, PORT , GEMINI_MODEL_NAME, GEMINI_API_KEY , MONGODB_URI, MONGODB_DATABASE_NAME , MONGODB_COLLECTION_NAME} = process.env;
+
+envVariables.PORT = PORT;
+envVariables.IS_DEV = IS_DEV;
+envVariables.GEMINI_MODEL_NAME = GEMINI_MODEL_NAME;
+envVariables.GEMINI_API_KEY = GEMINI_API_KEY;
+
+envVariables.MONGODB_URI = MONGODB_URI;
+envVariables.MONGODB_DATABASE_NAME = MONGODB_DATABASE_NAME;
+envVariables.MONGODB_COLLECTION_NAME = MONGODB_COLLECTION_NAME;
+
+export default envVariables;
