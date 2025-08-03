@@ -7,7 +7,7 @@ import { HumanMessage, AIMessage } from "@langchain/core/messages";
 
 import AppError from "../../middlewares/AppError.js";
 import {apiResponse , errorMessages} from '../../common/apiResponse.js';
-import {model , embedings , client , connectDb} from '../../common/utils.js'
+import {model , embedings , client , connectDb, customSearch , refineWithWeb} from '../../common/utils.js'
 import envVariables from "../../common/envConfig.js";
 const {MONGODB_COLLECTION_NAME , MONGODB_SEARCH_INDEX_NAME} = envVariables;
 
@@ -40,7 +40,7 @@ class BotService {
             const db = await connectDb();
             const collection = db.collection(MONGODB_COLLECTION_NAME);
             const {body} = request;
-            const {question , chatHistoryData} = body;
+            const {question , chatHistoryData , websearch} = body;
 
             const chatHistory = [];
             if(chatHistoryData.length!=0){
@@ -73,11 +73,16 @@ class BotService {
             });
 
             const prompt = ChatPromptTemplate.fromMessages([
-                ["system",
-                "Your name is Galactus and answer the user's question based on the following {context} , But you only tell your name when asked or when you are giving your brief description. If any anyone asked about the which model is used then the model Name is Galactus-1.0"],
+                [
+                  "system",
+                  "You are an assistant whose name is Galactus. Answer the user's questions based only on the following {context}. " +
+                  "Only reveal your name *if the user asks you for your name specifically*. " +
+                  "If the user asks 'which model is used', reply that the model name is Galactus-1.0. " +
+                  "If you cannot find an answer in the {context}, simply reply: I don't know"
+                ],
                 new MessagesPlaceholder("chat_history"),
-                ["user","{input}"],
-            ]);
+                ["user", "{input}"],
+              ]);
 
             const chain = await createStuffDocumentsChain({
                 llm: model,
@@ -89,12 +94,27 @@ class BotService {
                 retriever : retriverChain
             });
           
+            let finalAnswer;
+            if(websearch){
+                console.log('here')
+                const webResult = await customSearch(question);
+                console.log('web result >> ', webResult)
+                // refine with llm
+                finalAnswer = await refineWithWeb(webResult , "");
+                return { message: apiResponse.RESPONSE_RECEIVED.message, statusCode: apiResponse.RESPONSE_RECEIVED.statusCode, apiCode:apiResponse.RESPONSE_RECEIVED.apiCode , data : finalAnswer} 
+            }
             const response = await conversationChain.invoke({
                 chat_history : chatHistory,
                 input : question
-            });          
-            const answer = response.answer            
-            return { message: apiResponse.RESPONSE_RECEIVED.message, statusCode: apiResponse.RESPONSE_RECEIVED.statusCode, apiCode:apiResponse.RESPONSE_RECEIVED.apiCode , data : answer} 
+            });  
+    
+            finalAnswer = response.answer || "";
+
+            if(!response.answer || response.answer.toLowerCase().includes("i don't know")){
+                finalAnswer =  "I don't know about this.";
+                return { message: apiResponse.RESPONSE_RECEIVED.message, statusCode: apiResponse.RESPONSE_RECEIVED.statusCode, apiCode:apiResponse.RESPONSE_RECEIVED.apiCode , data : finalAnswer} 
+            }
+            return { message: apiResponse.RESPONSE_RECEIVED.message, statusCode: apiResponse.RESPONSE_RECEIVED.statusCode, apiCode:apiResponse.RESPONSE_RECEIVED.apiCode , data : finalAnswer} 
         } catch (error) {
             throw new AppError(error.message, errorMessages.ERROR_IN_EMBEDDINGS_GENERATION.apiCode, errorMessages.ERROR_IN_EMBEDDINGS_GENERATION.statusCode);
         }finally{
