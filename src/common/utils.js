@@ -38,27 +38,35 @@ const customSearch = async (query) => {
 
 }
 
-const refineWithWeb = async (results, existingAnswer) => {
+const refineWithWeb = async (results, existingAnswer, chatHistory) => {
     const prompt = `
-You are Galactus. You will be given a JSON array of raw web-search results. 
-
-Task:
-1. Analyze these results.
-2. Produce ONLY a JSON object (no markdown, no code fences, no explanations) with exactly these keys:
-   • "answer": a concise, accurate answer to the user's question.
-   • "imageUrl": a single relevant image URL if present, otherwise null.
-   • "otherUrl": the single most relevant webpage URL, otherwise null.
-
-Existing answer (if any): ${existingAnswer || "N/A"}
-
-Here are the web results:
-${JSON.stringify(results)}
-`;
-
+  Here is the conversation so far:
+  ${chatHistory.length ? chatHistory : "No prior conversation."}
+  
+  Now you will be given a JSON array of raw web-search results.
+  
+  Task:
+  1. Use the conversation context above (including any corrections) and the web-search results.
+  2. Always treat the user's **latest statements** as the ground truth—even if they contradict earlier context or answers.  
+  3. If the user re-asks or refers to something they said before , answer based on that most recent user turn. 
+  4. Output exactly one JSON object **and nothing else**:
+     {
+       "answer": <string>,
+       "imageUrl": <string|null>,
+       "otherUrl": <string|null>
+     }
+  
+  Do NOT wrap your output in markdown, code fences, or any explanatory text—just the JSON.
+  
+  Existing answer (if any): ${existingAnswer || "N/A"}
+  
+  Web results:
+  ${JSON.stringify(results)}
+    `.trim();  // to avoid leading/trailing whitespace
+  
     const res = await model.invoke(prompt);
-    return res.content || res;
-
-}
+    return res.content;  // should now be raw JSON only
+  };
 
 
 

@@ -45,11 +45,12 @@ class BotService {
             const chatHistory = [];
             if(chatHistoryData.length!=0){
                 chatHistoryData.forEach(({User , AI})=>{
+                    console.log('user > ', User)
+                    console.log('AI > ', AI)
                     chatHistory.push(new HumanMessage(User));
                     chatHistory.push(new AIMessage(AI));
                 })
             };
-
             const verctorStore = new MongoDBAtlasVectorSearch(embedings,{
                 collection : collection,
                 indexName : MONGODB_SEARCH_INDEX_NAME, // The name of the Atlas search index. Defaults to "default"
@@ -75,12 +76,12 @@ class BotService {
             const prompt = ChatPromptTemplate.fromMessages([
                 [
                   "system",
-                  `You are Galactus, an AI assistant.  
-              1) You have access to the full chat history (past user questions and your answers).  
-              2) If the user’s question refers to or depends on something they said earlier—e.g. “What was my last question?”, “Can you clarify what I just asked?”, or “Why did I ask that?”—you must answer *directly from the chat history*.  
-              3) If the user’s question is a normal information request, ignore the chat history and answer using the provided {context} (from vector store).  
-              4) You must only reveal your name if explicitly asked, and only mention “Galactus-1.0” when asked which model you are.  
-              5) If you cannot find an answer, reply exactly: “I don’t know.”`
+                  `You are Galactus, an AI assistant with full access to the chat history.  
+              1) Always treat the user's **latest statements** as the ground truth—even if they contradict earlier context or answers.  
+              2) If the user re-asks or refers to something they said before , answer based on that most recent user turn.  
+              3) Otherwise, for normal information requests, ignore chat history and answer using the provided {context}.  
+              4) Reveal your name only when asked, and only cite “Galactus-1.0” when asked which model you are.  
+              5) If you don’t know, reply exactly “I don’t know.”`
                 ],
                 new MessagesPlaceholder("chat_history"),
                 new MessagesPlaceholder("context"),
@@ -101,32 +102,27 @@ class BotService {
             if(websearch){
                 console.log('here')
                 const webResult = await customSearch(question);
-                console.log('web result >> ', webResult)
                 // refine with llm
-                finalAnswer = await refineWithWeb(webResult , "");
+                finalAnswer = await refineWithWeb(webResult , "", chatHistory);
                 return { message: apiResponse.RESPONSE_RECEIVED.message, statusCode: apiResponse.RESPONSE_RECEIVED.statusCode, apiCode:apiResponse.RESPONSE_RECEIVED.apiCode , data : finalAnswer} 
             }
+            
             const response = await conversationChain.invoke({
                 chat_history : chatHistory,
                 input : question
-            });  
+            });
             finalAnswer = response.answer || "";
-
             if(!response.answer || response.answer.toLowerCase().includes("i don't know")){
                 finalAnswer =  "I don't know about this.";
-                return { message: apiResponse.RESPONSE_RECEIVED.message, statusCode: apiResponse.RESPONSE_RECEIVED.statusCode, apiCode:apiResponse.RESPONSE_RECEIVED.apiCode , data : finalAnswer} 
+                return { message: apiResponse.RESPONSE_RECEIVED.message, statusCode: apiResponse.RESPONSE_RECEIVED.statusCode, apiCode:apiResponse.RESPONSE_RECEIVED.apiCode , data : {answer:finalAnswer}} 
             }
-            return { message: apiResponse.RESPONSE_RECEIVED.message, statusCode: apiResponse.RESPONSE_RECEIVED.statusCode, apiCode:apiResponse.RESPONSE_RECEIVED.apiCode , data : finalAnswer} 
+            return { message: apiResponse.RESPONSE_RECEIVED.message, statusCode: apiResponse.RESPONSE_RECEIVED.statusCode, apiCode:apiResponse.RESPONSE_RECEIVED.apiCode , data : {answer:finalAnswer}} 
         } catch (error) {
             throw new AppError(error.message, errorMessages.ERROR_IN_EMBEDDINGS_GENERATION.apiCode, errorMessages.ERROR_IN_EMBEDDINGS_GENERATION.statusCode);
         }finally{
             await client.close();
         }
     };
-
-
-
-
 }
 
 
