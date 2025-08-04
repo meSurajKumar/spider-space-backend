@@ -76,7 +76,7 @@ class BotService {
             const prompt = ChatPromptTemplate.fromMessages([
                 [
                   "system",
-                  `You are Galactus, an AI assistant with full access to the chat history.  
+                  `You are Galactus, an AI assistant.  
               1) Always treat the user's **latest statements** as the ground truth—even if they contradict earlier context or answers.  
               2) If the user re-asks or refers to something they said before , answer based on that most recent user turn.  
               3) Otherwise, for normal information requests, ignore chat history and answer using the provided {context}.  

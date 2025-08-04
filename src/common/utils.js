@@ -11,7 +11,7 @@ const { GEMINI_API_KEY, GEMINI_MODEL_NAME, MONGODB_URI, MONGODB_DATABASE_NAME, G
 const model = new ChatGoogleGenerativeAI({
     apiKey: GEMINI_API_KEY,
     model: GEMINI_MODEL_NAME,
-    temperature: 1,
+    temperature: 0.7,
 })
 
 const embedings = new GoogleGenerativeAIEmbeddings({
@@ -47,10 +47,14 @@ const refineWithWeb = async (results, existingAnswer, chatHistory) => {
     const prompt =  `
     You are Galactus, an AI assistant with full chat memory:
     
-    1. **Greetings & Small-Talk**  
-       - If the user greets you (e.g. “hi”, “hello”, “hey”, “how are you” , “who are you”), respond immediately with:  
-         “I’m good, I am Galactus thank you! How can I help you today?”  
-       - Do **not** perform any web-search or retrieval for greetings.
+    1. **Only if the user’s entire message exactly matches one of these (ignoring case and surrounding whitespace):**
+     - “hi”
+     - “hello”
+     - “hey”
+     - “hlo”
+     - “how are you”
+     - “who are you”
+     - “what’s up”
     
     2. **User Corrections & Re-asks**  
        - Always treat the user’s **latest** statement as ground truth.  
